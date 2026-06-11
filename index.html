@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>স্মুথ ওয়েব আইপিটিভি প্লেয়ার</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<div style="padding:10px">
+  <input id="searchBox"
+         placeholder="Search channel..."
+         style="width:100%;padding:10px">
+
+  <select id="categoryFilter"
+          style="width:100%;padding:10px;margin-top:8px">
+      <option value="All">All</option>
+  </select>
+</div>
+let allChannels = [];
+
+function parseM3U(data) {
+    const lines = data.split('\n');
+    const channels = [];
+    let current = {};
+
+    for(let i=0;i<lines.length;i++) {
+
+        const line = lines[i].trim();
+
+        if(line.startsWith('#EXTINF:')) {
+
+            const name =
+              line.match(/,(.+)$/)?.[1] ||
+              'Unknown';
+
+            const logo =
+              line.match(/tvg-logo="([^"]+)"/)?.[1] ||
+              '';
+
+            const group =
+              line.match(/group-title="([^"]+)"/)?.[1] ||
+              'Other';
+
+            current = {
+                name,
+                logo,
+                group
+            };
+        }
+
+        else if(line.startsWith('http')) {
+
+            current.url = line;
+
+            channels.push(current);
+        }
+    }
+
+    allChannels = channels;
+
+    loadCategories(channels);
+
+    return channels;
+}
+
+function loadCategories(channels){
+
+   const select =
+      document.getElementById(
+        "categoryFilter"
+      );
+
+   const groups =
+      [...new Set(
+        channels.map(c=>c.group)
+      )];
+
+   select.innerHTML =
+      '<option value="All">All</option>';
+
+   groups.forEach(g=>{
+
+      const op =
+        document.createElement("option");
+
+      op.value = g;
+      op.textContent = g;
+
+      select.appendChild(op);
+   });
+}
+
+document
+.getElementById("searchBox")
+.addEventListener("input",filterChannels);
+
+document
+.getElementById("categoryFilter")
+.addEventListener("change",filterChannels);
+
+function filterChannels(){
+
+   const search =
+      document
+      .getElementById("searchBox")
+      .value
+      .toLowerCase();
+
+   const category =
+      document
+      .getElementById("categoryFilter")
+      .value;
+
+   const filtered =
+      allChannels.filter(ch=>{
+
+         const matchName =
+            ch.name
+            .toLowerCase()
+            .includes(search);
+
+         const matchCat =
+            category==="All" ||
+            ch.group===category;
+
+         return matchName &&
+                matchCat;
+      });
+
+   renderChannels(filtered);
+}
+</script>
+</body>
+    </html>
+
+
+
